@@ -10,6 +10,8 @@ pub fn run(
     mut server_proc: RwLockWriteGuard<Option<Child>>,
     ip: Option<IpAddr>,
     server_jar_name: &str,
+    max_mem: &str,
+    min_mem: &str,
     notify_id: u64,
 ) -> String {
     // Need to dereference twice to get through reference and lock
@@ -18,8 +20,8 @@ pub fn run(
         None => {
             if let Ok(proc) = Command::new("java")
                 .args([
-                    "-Xmx6144M",
-                    "-Xms2048M",
+                    format!("-Xmx{max_mem}").as_str(),
+                    format!("-Xms{min_mem}").as_str(),
                     "-jar",
                     server_jar_name,
                     "nogui",
