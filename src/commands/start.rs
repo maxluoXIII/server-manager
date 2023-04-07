@@ -5,27 +5,28 @@ use serenity::builder::CreateApplicationCommand;
 use serenity::model::prelude::interaction::application_command::CommandDataOption;
 use tokio::sync::RwLockWriteGuard;
 
-pub fn run(
+pub fn run<'a>(
     _options: &[CommandDataOption],
     mut server_proc: RwLockWriteGuard<Option<Child>>,
     ip: Option<IpAddr>,
+    java_path: &str,
     server_jar_name: &str,
     max_mem: &str,
     min_mem: &str,
+    extra_opts: impl IntoIterator<Item = &'a str>,
     notify_id: u64,
 ) -> String {
     // Need to dereference twice to get through reference and lock
     match *server_proc {
         Some(_) => "Already running!".to_string(),
         None => {
-            if let Ok(proc) = Command::new("java")
+            if let Ok(proc) = Command::new(java_path)
                 .args([
                     format!("-Xmx{max_mem}").as_str(),
                     format!("-Xms{min_mem}").as_str(),
-                    "-jar",
-                    server_jar_name,
-                    "nogui",
                 ])
+                .args(extra_opts)
+                .args(["-jar", server_jar_name, "nogui"])
                 .stdin(Stdio::piped())
                 .spawn()
             {

@@ -48,9 +48,16 @@ impl EventHandler for Handler {
                             &command.data.options,
                             server_process,
                             public_ip::addr().await,
+                            &CONFIG
+                                .get::<String>("java")
+                                .unwrap_or_else(|_| "java".to_string()),
                             &CONFIG.get::<String>("server-jar").unwrap(),
                             &CONFIG.get::<String>("max-mem").unwrap(),
                             &CONFIG.get::<String>("min-mem").unwrap(),
+                            CONFIG
+                                .get::<String>("extra-opts")
+                                .unwrap_or_default()
+                                .split_ascii_whitespace(),
                             CONFIG.get("notify-id").unwrap(),
                         )
                     }

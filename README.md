@@ -12,14 +12,16 @@ Place the binary/executable in the same folder as the minecraft server. Make sur
 ## Configuration {#configuration}
 In order to configure the server manager, you must have a [toml file](https://toml.io/en/) with the name `server-man-config.toml` in the same folder as the executable. These are the required values:
 
-| Name       | Type   | Description                                                                                                                 |
-|------------|--------|-----------------------------------------------------------------------------------------------------------------------------|
-| token      | String | The application token                                                                                                       |
-| guild-id   | number | The guild id of the discord server where the bot will be active                                                             |
-| notify-id  | number | The user id of the person who will be pinged when the server will start/stop (probably the person who's running the server) |
-| server-jar | String | The name of the jar file for the server                                                                                     |
-| max-mem    | String | The maximum amount of memory (will be prepended with `-Xmx` as a server option)                                             |
-| max-mem    | String | The minimum amount of memory that the server will use (will be prepended with `-Xms` as a server option)                    |
+| Name       | Type   | Required | Description                                                                                                                 |
+|------------|--------|----------|------------------------------------------------------------------------------------------------------------------|
+| token      | String | Yes      | The application token                                                                                                       |
+| guild-id   | number | Yes      | The guild id of the discord server where the bot will be active                                                             |
+| notify-id  | number | Yes      | The user id of the person who will be pinged when the server will start/stop (probably the person who's running the server) |
+| server-jar | String | Yes      | The name of the jar file for the server                                                                                     |
+| max-mem    | String | Yes      | The maximum amount of memory (will be prepended with `-Xmx` as a server option)                                             |
+| max-mem    | String | Yes      | The minimum amount of memory that the server will use (will be prepended with `-Xms` as a server option)                    |
+| java       | String | No       | Path to `java` executable. Will default to "java" if value is not provided
+| extra-opts | String | No       | Extra parameters to pass to the `java` command. Defaults to an empty string
 
 ### Example
 Here is an example config file:
@@ -30,4 +32,6 @@ notify-id = 13121110987654321
 server-jar = "minecraft_server.1.19.3.jar"
 max-mem = "6144M"
 min-mem = "2048M"
+java = "C:/Program Files/Java/jre1.8.0_361/bin/java.exe"
+extra-opts = "-Dsun.rmi.dgc.server.gcInterval=2147483646 -XX:+UnlockExperimentalVMOptions -XX:G1NewSizePercent=0 -XX:G1ReservePercent=20 -XX:MaxGCPauseMillis=50 -XX:G1HeapRegionSize=32M -XX:+UseG1GC"
 ```
