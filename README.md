@@ -13,15 +13,15 @@ Place the binary/executable in the same folder as the minecraft server. Make sur
 In order to configure the server manager, you must have a [toml file](https://toml.io/en/) with the name `server-man-config.toml` in the same folder as the executable. These are the required values:
 
 | Name       | Type   | Required | Description                                                                                                                 |
-|------------|--------|----------|------------------------------------------------------------------------------------------------------------------|
+| ---------- | ------ | -------- | --------------------------------------------------------------------------------------------------------------------------- |
 | token      | String | Yes      | The application token                                                                                                       |
 | guild-id   | number | Yes      | The guild id of the discord server where the bot will be active                                                             |
 | notify-id  | number | Yes      | The user id of the person who will be pinged when the server will start/stop (probably the person who's running the server) |
 | server-jar | String | Yes      | The name of the jar file for the server                                                                                     |
 | max-mem    | String | Yes      | The maximum amount of memory (will be prepended with `-Xmx` as a server option)                                             |
 | max-mem    | String | Yes      | The minimum amount of memory that the server will use (will be prepended with `-Xms` as a server option)                    |
-| java       | String | No       | Path to `java` executable. Will default to "java" if value is not provided
-| extra-opts | String | No       | Extra parameters to pass to the `java` command. Defaults to an empty string
+| java       | String | No       | Path to `java` executable. Will default to "java" if value is not provided                                                  |
+| extra-opts | String | No       | Extra parameters to pass to the `java` command. Defaults to an empty string                                                 |
 
 ### Example
 Here is an example config file:
