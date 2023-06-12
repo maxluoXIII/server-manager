@@ -1,16 +1,23 @@
 # Server Manager
-This is a discord bot that allows members of a discord server to jointly start/stop a minecraft server.
+This is a discord bot that allows members of a discord server to jointly
+start/stop a minecraft server.
 
 ## Commands
-1. `/start`: This command starts the server. It will not try to restart the server if it has already been started.
-2. `/stop`: This command stops the server. It will not try to stop a server if it has already been stopped/has not been started.
+1. `/start`: This command starts the server. It will not try to restart the
+   server if it has already been started.
+2. `/stop`: This command stops the server. It will not try to stop a server if
+   it has already been stopped/has not been started.
 3. `/ping`: This command checks to see if the server manager bot is running.
 
 ## Getting Started
-Place the binary/executable in the same folder as the minecraft server. Make sure there is a configuration file as described in the [Configuration section](#configuration).
+Place the binary/executable in the same folder as the minecraft server. Make
+sure there is a configuration file as described in the [Configuration
+section](#configuration).
 
 ## Configuration {#configuration}
-In order to configure the server manager, you must have a [toml file](https://toml.io/en/) with the name `server-man-config.toml` in the same folder as the executable. These are the required values:
+In order to configure the server manager, you must have a [toml
+file](https://toml.io/en/) with the name `server-man-config.toml` in the same
+folder as the executable. These are the required values:
 
 | Name       | Type   | Required | Description                                                                                                                 |
 | ---------- | ------ | -------- | --------------------------------------------------------------------------------------------------------------------------- |
