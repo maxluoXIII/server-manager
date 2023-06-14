@@ -5,6 +5,7 @@ use std::sync::Arc;
 
 use config::Config;
 use lazy_static::lazy_static;
+use serde::Deserialize;
 use serenity::model::application::interaction::{Interaction, InteractionResponseType};
 use serenity::model::gateway::Ready;
 use serenity::model::id::GuildId;
@@ -23,6 +24,18 @@ impl TypeMapKey for ServerProcess {
     type Value = Arc<RwLock<Option<Child>>>;
 }
 
+#[derive(Deserialize)]
+#[serde(rename_all = "kebab-case")]
+struct ServerConfig {
+    name: String,
+    dir: String,
+    server_jar: String,
+    max_mem: String,
+    min_mem: String,
+    #[serde(default)]
+    extra_opts: String,
+}
+
 struct Handler;
 
 #[async_trait]
@@ -33,6 +46,7 @@ impl EventHandler for Handler {
 
             let content = match command.data.name.as_str() {
                 "ping" => commands::ping::run(&command.data.options),
+                "list" => commands::list::run(&command.data.options, &CONFIG),
                 "start" => {
                     let server_process = {
                         let data_read = ctx.data.read().await;
@@ -104,6 +118,7 @@ impl EventHandler for Handler {
         let commands = GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
             commands
                 .create_application_command(|command| commands::ping::register(command))
+                .create_application_command(|command| commands::list::register(command))
                 .create_application_command(|command| commands::start::register(command))
                 .create_application_command(|command| commands::stop::register(command))
         })
