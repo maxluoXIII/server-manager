@@ -9,10 +9,10 @@ pub fn run(_options: &[CommandDataOption], config: &Config) -> String {
             .iter()
             .enumerate()
             .map(|(index, val)| {
-                let server_name = match val.clone().try_deserialize::<ServerConfig>() {
-                    Ok(server_config) => server_config.name,
-                    Err(_) => "Failed to deserialize server config".to_string(),
-                };
+                let server_name = val.clone().try_deserialize::<ServerConfig>().map_or(
+                    "Failed to deserialize server config".to_string(),
+                    |server_config| server_config.name,
+                );
                 format!("{index}. {server_name}\n")
             })
             .collect(),

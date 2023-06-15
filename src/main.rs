@@ -24,6 +24,10 @@ impl TypeMapKey for ServerProcess {
     type Value = Arc<RwLock<Option<Child>>>;
 }
 
+fn default_java() -> String {
+    "java".to_string()
+}
+
 #[derive(Deserialize)]
 #[serde(rename_all = "kebab-case")]
 struct ServerConfig {
@@ -32,6 +36,8 @@ struct ServerConfig {
     server_jar: String,
     max_mem: String,
     min_mem: String,
+    #[serde(default = "default_java")]
+    java: String,
     #[serde(default)]
     extra_opts: String,
 }
@@ -62,17 +68,7 @@ impl EventHandler for Handler {
                             &command.data.options,
                             server_process,
                             public_ip::addr().await,
-                            &CONFIG
-                                .get::<String>("java")
-                                .unwrap_or_else(|_| "java".to_string()),
-                            &CONFIG.get::<String>("server-jar").unwrap(),
-                            &CONFIG.get::<String>("max-mem").unwrap(),
-                            &CONFIG.get::<String>("min-mem").unwrap(),
-                            CONFIG
-                                .get::<String>("extra-opts")
-                                .unwrap_or_default()
-                                .split_ascii_whitespace(),
-                            CONFIG.get("notify-id").unwrap(),
+                            &CONFIG,
                         )
                     }
                 }
@@ -119,7 +115,7 @@ impl EventHandler for Handler {
             commands
                 .create_application_command(|command| commands::ping::register(command))
                 .create_application_command(|command| commands::list::register(command))
-                .create_application_command(|command| commands::start::register(command))
+                .create_application_command(|command| commands::start::register(command, &CONFIG))
                 .create_application_command(|command| commands::stop::register(command))
         })
         .await;
