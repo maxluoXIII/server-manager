@@ -23,7 +23,7 @@ server, but make sure there is a configuration file as described in the
 In order to configure the server manager, you must have a valid configuration
 file. Valid file types are listed
 [here](https://docs.rs/config/latest/config/index.html). As long as they support
-arrays. Not that only [toml files](https://toml.io/en/) have been tested. The
+arrays. Note that only [toml files](https://toml.io/en/) have been tested. The
 configuration file should have the name `server-man-config.<extension>` in the
 same folder as the executable. These are the values used:
 
