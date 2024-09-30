@@ -5,11 +5,11 @@ start/stop a minecraft server.
 ## Commands
 1. `/start`: This command starts the server. It will not try to restart the
    server if it has already been started using this instance of the bot.
-   - Note that only one server can be running at a time.
    - Options for this command come from the [configuration file](#configuration).
 2. `/stop`: This command stops the server. It will not try to stop a server if
    it has already been stopped/has not been started using this instance of the
    bot.
+   - Options for this command come from the [configuration file](#configuration).
 3. `/ping`: This command checks to see if the server manager bot is running.
 4. `/list`: This command lists the servers that this bot is managing. This is
    pulled from the [configuration file](#configuration).
