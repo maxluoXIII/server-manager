@@ -19,9 +19,9 @@ lazy_static! {
         .unwrap();
 }
 
-struct ServerProcess;
-impl TypeMapKey for ServerProcess {
-    type Value = Arc<RwLock<Option<Child>>>;
+struct ServerProcessMap;
+impl TypeMapKey for ServerProcessMap {
+    type Value = Arc<RwLock<Vec<Option<Child>>>>;
 }
 
 fn default_java() -> String {
@@ -54,38 +54,38 @@ impl EventHandler for Handler {
                 "ping" => commands::ping::run(&command.data.options),
                 "list" => commands::list::run(&command.data.options, &CONFIG),
                 "start" => {
-                    let server_process = {
+                    let proc_map = {
                         let data_read = ctx.data.read().await;
                         data_read
-                            .get::<ServerProcess>()
-                            .expect("Expected ServerProcess in TypeMap.")
+                            .get::<ServerProcessMap>()
+                            .expect("Expected ServerProcessMap in TypeMap.")
                             .clone()
                     };
 
                     {
-                        let server_process = server_process.write().await;
+                        let mut server_process = proc_map.write().await;
                         commands::start::run(
                             &command.data.options,
-                            server_process,
+                            &mut *server_process,
                             public_ip::addr().await,
                             &CONFIG,
                         )
                     }
                 }
                 "stop" => {
-                    let server_process = {
+                    let proc_map = {
                         let data_read = ctx.data.read().await;
                         data_read
-                            .get::<ServerProcess>()
-                            .expect("Expected ServerProcess in TypeMap.")
+                            .get::<ServerProcessMap>()
+                            .expect("Expected ServerProcessMap in TypeMap.")
                             .clone()
                     };
 
                     {
-                        let mut server_process = server_process.write().await;
+                        let mut server_process = proc_map.write().await;
                         commands::stop::run(
                             &command.data.options,
-                            &mut server_process,
+                            &mut *server_process,
                             CONFIG.get("notify-id").unwrap(),
                         )
                     }
@@ -116,7 +116,7 @@ impl EventHandler for Handler {
                 .create_application_command(|command| commands::ping::register(command))
                 .create_application_command(|command| commands::list::register(command))
                 .create_application_command(|command| commands::start::register(command, &CONFIG))
-                .create_application_command(|command| commands::stop::register(command))
+                .create_application_command(|command| commands::stop::register(command, &CONFIG))
         })
         .await;
 
@@ -136,11 +136,20 @@ async fn main() {
         .await
         .expect("Err creating client");
 
+    let num_servers = CONFIG
+        .get_array("servers")
+        .expect("Expected servers array in config")
+        .len();
+
     {
         // Get a write lock to the data in the client
         // Use a block to make sure the lock is released
+        let mut proc_map = Vec::with_capacity(num_servers);
+        for _ in 0..num_servers {
+            proc_map.push(None);
+        }
         let mut data = client.data.write().await;
-        data.insert::<ServerProcess>(Arc::new(RwLock::new(None)));
+        data.insert::<ServerProcessMap>(Arc::new(RwLock::new(proc_map)));
     }
 
     if let Err(why) = client.start().await {

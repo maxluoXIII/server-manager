@@ -7,35 +7,40 @@ use serenity::model::prelude::command::CommandOptionType;
 use serenity::model::prelude::interaction::application_command::{
     CommandDataOption, CommandDataOptionValue,
 };
-use tokio::sync::RwLockWriteGuard;
 
 use crate::ServerConfig;
 
 pub fn run(
     options: &[CommandDataOption],
-    mut server_proc: RwLockWriteGuard<Option<Child>>,
+    proc_map: &mut Vec<Option<Child>>,
     ip: Option<IpAddr>,
     config: &Config,
 ) -> String {
+    let notify_id = config
+        .get::<u64>("notify-id")
+        .expect("Expected required notify id");
+
+    let server_index = match options
+        .iter()
+        .find(|option| option.name == "server")
+        .expect("Expected required server index option")
+        .resolved
+        .clone()
+        .expect("Expected required server option value")
+    {
+        CommandDataOptionValue::Integer(index) => index as usize,
+        _ => return "Did not receive a server index".to_string(),
+    };
+
+    // Get information that server's process if it is running
+    if server_index >= proc_map.len() {
+        return "Server index out of bounds".to_string();
+    }
+    let server_proc = &mut proc_map[server_index];
+
     match *server_proc {
-        Some(_) => "There is a server already running!".to_string(),
+        Some(_) => "This server is already running!".to_string(),
         None => {
-            let notify_id = config
-                .get::<u64>("notify-id")
-                .expect("Expected required notify id");
-
-            let server_index = match options
-                .iter()
-                .find(|option| option.name == "server")
-                .expect("Expected required server index option")
-                .resolved
-                .clone()
-                .expect("Expected required server option value")
-            {
-                CommandDataOptionValue::Integer(index) => index as usize,
-                _ => return "Did not receive a server index".to_string(),
-            };
-
             let server_config = match config
                 .get_array("servers")
                 .expect("Expected servers array in config")
@@ -78,7 +83,7 @@ pub fn register<'a>(
 ) -> &'a mut CreateApplicationCommand {
     command
         .name("start")
-        .description("Start the minecraft server")
+        .description("Start a minecraft server")
         .create_option(|option| {
             option
                 .name("server")
@@ -92,6 +97,7 @@ pub fn register<'a>(
                         "Failed to deserialize server config".to_string(),
                         |server_config| server_config.name,
                     );
+                    println!("Added server {server_name}");
                     option.add_int_choice(server_name, index as i32);
                 })
             } else {
