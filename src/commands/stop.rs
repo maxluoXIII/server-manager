@@ -69,7 +69,10 @@ pub fn register<'a>(
                 servers.iter().enumerate().for_each(|(index, val)| {
                     let server_name = val.clone().try_deserialize::<ServerConfig>().map_or(
                         "Failed to deserialize server config".to_string(),
-                        |server_config| server_config.name,
+                        |server_config| match server_config {
+                            ServerConfig::JavaConfig { name, .. } => name,
+                            ServerConfig::BedrockConfig { name, .. } => name,
+                        },
                     );
                     option.add_int_choice(server_name, index as i32);
                 })
