@@ -11,7 +11,10 @@ pub fn run(_options: &[CommandDataOption], config: &Config) -> String {
             .map(|(index, val)| {
                 let server_name = val.clone().try_deserialize::<ServerConfig>().map_or(
                     "Failed to deserialize server config".to_string(),
-                    |server_config| server_config.name,
+                    |server_config| match server_config {
+                        ServerConfig::JavaConfig { name, .. } => name,
+                        ServerConfig::BedrockConfig { name, .. } => name,
+                    },
                 );
                 format!("{index}. {server_name}\n")
             })

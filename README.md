@@ -32,9 +32,12 @@ same folder as the executable. These are the values used:
 | token     | String  | Yes      | The application token                                                                                                                                                                                           |
 | guild-id  | integer | Yes      | The guild id of the discord server where the bot will be active                                                                                                                                                 |
 | notify-id | integer | Yes      | The user id of the person who will be pinged when the server will start/stop (probably the person who's running the server)                                                                                     |
-| servers   | array   | Yes      | This array defines the servers that this bot manages. Each object in the array is a server object and should adhere to the [table below](#server-object). Each element in the array represents a single server. |
+| servers   | array   | Yes      | This array defines the servers that this bot manages. Each object in the array is a server object and should adhere to one of the [tables below](#server-object). Each element in the array represents a single server. |
 
 ### Server Object
+There are two types of server configurations: Java configurations and Bedrock configurations.
+
+#### Java Server
 | Name       | Type   | Required | Description                                                                                              |
 | ---------- | ------ | -------- | -------------------------------------------------------------------------------------------------------- |
 | name       | String | Yes      | The name of the server that will be displayed to users on the discord server                             |
@@ -44,6 +47,13 @@ same folder as the executable. These are the values used:
 | max-mem    | String | Yes      | The minimum amount of memory that the server will use (will be prepended with `-Xms` as a server option) |
 | java       | String | No       | Path to `java` executable. Will default to "java" if value is not provided                               |
 | extra-opts | String | No       | Extra parameters to pass to the `java` command. Defaults to an empty string                              |
+
+#### Bedrock Server
+| Name | Type   | Required | Description                                                                  |
+| ---- | ------ | -------- | ---------------------------------------------------------------------------- |
+| name | String | Yes      | The name of the server that will be displayed to users on the discord server |
+| dir  | String | Yes      | The directory where the exe file is located                                  |
+| exe  | String | Yes      | The name of the exe file for the bedrock server                              |
 
 ### Example
 Here is an example config file in toml:
@@ -67,4 +77,9 @@ dir = "Vanilla Server"
 server-jar = "server.jar"
 max-mem = "6144M"
 min-mem = "2048M"
+
+[[servers]]
+name = "Bedrock"
+dir = "bedrock-server-1.21.30.03"
+exe = "bedrock_server.exe"
 ```

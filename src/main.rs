@@ -29,17 +29,26 @@ fn default_java() -> String {
 }
 
 #[derive(Deserialize)]
-#[serde(rename_all = "kebab-case")]
-struct ServerConfig {
-    name: String,
-    dir: String,
-    server_jar: String,
-    max_mem: String,
-    min_mem: String,
-    #[serde(default = "default_java")]
-    java: String,
-    #[serde(default)]
-    extra_opts: String,
+#[serde(untagged)]
+enum ServerConfig {
+    #[serde(rename_all = "kebab-case")]
+    JavaConfig {
+        name: String,
+        dir: String,
+        server_jar: String,
+        max_mem: String,
+        min_mem: String,
+        #[serde(default = "default_java")]
+        java: String,
+        #[serde(default)]
+        extra_opts: String,
+    },
+    #[serde(rename_all = "kebab-case")]
+    BedrockConfig {
+        name: String,
+        dir: String,
+        exe: String,
+    },
 }
 
 struct Handler;

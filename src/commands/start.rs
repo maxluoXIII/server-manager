@@ -10,6 +10,34 @@ use serenity::model::prelude::interaction::application_command::{
 
 use crate::ServerConfig;
 
+fn start_server(server_config: &ServerConfig) -> std::io::Result<Child> {
+    match server_config {
+        ServerConfig::JavaConfig {
+            dir,
+            server_jar,
+            max_mem,
+            min_mem,
+            java,
+            extra_opts,
+            ..
+        } => Command::new(java)
+            .args([
+                format!("-Xmx{}", max_mem).as_str(),
+                format!("-Xms{}", min_mem).as_str(),
+            ])
+            .args(extra_opts.split_whitespace())
+            .args(["-jar", &server_jar, "nogui"])
+            .current_dir(dir)
+            .stdin(Stdio::piped())
+            .spawn(),
+
+        ServerConfig::BedrockConfig { dir, exe, .. } => Command::new(format!("{dir}/{exe}"))
+            .current_dir(dir)
+            .stdin(Stdio::piped())
+            .spawn(),
+    }
+}
+
 pub fn run(
     options: &[CommandDataOption],
     proc_map: &mut Vec<Option<Child>>,
@@ -53,25 +81,18 @@ pub fn run(
                 Err(e) => return format!("<@{notify_id}> {e}"),
             };
 
-            if let Ok(proc) = Command::new(server_config.java)
-                .args([
-                    format!("-Xmx{}", server_config.max_mem).as_str(),
-                    format!("-Xms{}", server_config.min_mem).as_str(),
-                ])
-                .args(server_config.extra_opts.split_whitespace())
-                .args(["-jar", &server_config.server_jar, "nogui"])
-                .current_dir(server_config.dir)
-                .stdin(Stdio::piped())
-                .spawn()
-            {
-                *server_proc = Some(proc);
-                if let Some(ip) = ip {
-                    format!("<@{notify_id}> Starting the server at {ip}, please wait ~20 seconds before joining")
-                } else {
-                    format!("<@{notify_id}> Starting the server, please wait ~20 seconds before joining")
+            match start_server(&server_config) {
+                Ok(proc) => {
+                    *server_proc = Some(proc);
+                    if let Some(ip) = ip {
+                        format!("<@{notify_id}> Starting the server at {ip}, please wait ~20 seconds before joining")
+                    } else {
+                        format!("<@{notify_id}> Starting the server, please wait ~20 seconds before joining")
+                    }
                 }
-            } else {
-                format!("<@{notify_id}> Failed to start server process")
+                Err(err) => {
+                    format!("<@{notify_id}> Failed to start server process: {err}")
+                }
             }
         }
     }
@@ -95,7 +116,10 @@ pub fn register<'a>(
                 servers.iter().enumerate().for_each(|(index, val)| {
                     let server_name = val.clone().try_deserialize::<ServerConfig>().map_or(
                         "Failed to deserialize server config".to_string(),
-                        |server_config| server_config.name,
+                        |server_config| match server_config {
+                            ServerConfig::JavaConfig { name, .. } => name,
+                            ServerConfig::BedrockConfig { name, .. } => name,
+                        },
                     );
                     println!("Added server {server_name}");
                     option.add_int_choice(server_name, index as i32);
