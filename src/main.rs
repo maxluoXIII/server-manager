@@ -42,12 +42,14 @@ enum ServerConfig {
         java: String,
         #[serde(default)]
         extra_opts: String,
+        guild_id: u64,
     },
     #[serde(rename_all = "kebab-case")]
     BedrockConfig {
         name: String,
         dir: String,
         exe: String,
+        guild_id: u64,
     },
 }
 
@@ -118,21 +120,41 @@ impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
 
-        let guild_id = GuildId(CONFIG.get::<u64>("guild-id").unwrap());
+        let server_configs: Vec<ServerConfig> = CONFIG
+            .get_array("servers")
+            .expect("Could not find 'servers' array in config")
+            .iter()
+            .map(|val| {
+                val.clone()
+                    .try_deserialize::<ServerConfig>()
+                    .expect("Could not deserialize 'servers' array")
+            })
+            .collect();
 
-        let commands = GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
-            commands
-                .create_application_command(|command| commands::ping::register(command))
-                .create_application_command(|command| commands::list::register(command))
-                .create_application_command(|command| commands::start::register(command, &CONFIG))
-                .create_application_command(|command| commands::stop::register(command, &CONFIG))
-        })
-        .await;
+        for server_config in &server_configs {
+            let guild_id = GuildId(match server_config {
+                ServerConfig::JavaConfig { guild_id, .. } => *guild_id,
+                ServerConfig::BedrockConfig { guild_id, .. } => *guild_id,
+            });
 
-        println!(
-            "I now have the following guild slash commands: {:?}",
-            commands
-        );
+            let commands = GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
+                commands
+                    .create_application_command(|command| commands::ping::register(command))
+                    .create_application_command(|command| commands::list::register(command))
+                    .create_application_command(|command| {
+                        commands::start::register(command, &guild_id, &server_configs)
+                    })
+                    .create_application_command(|command| {
+                        commands::stop::register(command, &guild_id, &server_configs)
+                    })
+            })
+            .await;
+
+            println!(
+                "Registered following commands for {:?}: {:?}",
+                guild_id, commands
+            );
+        }
     }
 }
 

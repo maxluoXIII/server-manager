@@ -3,6 +3,7 @@ use std::process::{Child, Command, Stdio};
 
 use config::Config;
 use serenity::builder::CreateApplicationCommand;
+use serenity::model::id::GuildId;
 use serenity::model::prelude::command::CommandOptionType;
 use serenity::model::prelude::interaction::application_command::{
     CommandDataOption, CommandDataOptionValue,
@@ -100,7 +101,8 @@ pub fn run(
 
 pub fn register<'a>(
     command: &'a mut CreateApplicationCommand,
-    config: &Config,
+    guild_id: &GuildId,
+    server_configs: &Vec<ServerConfig>,
 ) -> &'a mut CreateApplicationCommand {
     command
         .name("start")
@@ -112,21 +114,24 @@ pub fn register<'a>(
                 .kind(CommandOptionType::Integer)
                 .required(true);
 
-            if let Ok(servers) = config.get_array("servers") {
-                servers.iter().enumerate().for_each(|(index, val)| {
-                    let server_name = val.clone().try_deserialize::<ServerConfig>().map_or(
-                        "Failed to deserialize server config".to_string(),
-                        |server_config| match server_config {
-                            ServerConfig::JavaConfig { name, .. } => name,
-                            ServerConfig::BedrockConfig { name, .. } => name,
-                        },
-                    );
+            server_configs
+                .iter()
+                .enumerate()
+                .filter(|(_, server_config)| {
+                    *guild_id
+                        == match server_config {
+                            ServerConfig::JavaConfig { guild_id, .. } => GuildId(*guild_id),
+                            ServerConfig::BedrockConfig { guild_id, .. } => GuildId(*guild_id),
+                        }
+                })
+                .for_each(|(index, server_config)| {
+                    let server_name = match server_config {
+                        ServerConfig::JavaConfig { name, .. } => name,
+                        ServerConfig::BedrockConfig { name, .. } => name,
+                    };
                     println!("Added server {server_name}");
                     option.add_int_choice(server_name, index as i32);
-                })
-            } else {
-                println!("No 'servers' array found in config!");
-            }
+                });
 
             option
         })
