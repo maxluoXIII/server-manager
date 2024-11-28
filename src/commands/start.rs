@@ -61,7 +61,6 @@ pub fn run(
         _ => return "Did not receive a server index".to_string(),
     };
 
-    // Get information that server's process if it is running
     if server_index >= proc_map.len() {
         return "Server index out of bounds".to_string();
     }

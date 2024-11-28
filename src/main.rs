@@ -19,6 +19,19 @@ lazy_static! {
         .unwrap();
 }
 
+fn parse_server_configs(config: &Config) -> Vec<ServerConfig> {
+   config 
+       .get_array("servers")
+       .expect("Could not find 'servers' array in config")
+       .iter()
+       .map(|val| {
+           val.clone()
+               .try_deserialize::<ServerConfig>()
+               .expect("Could not deserialize 'servers' array")
+       })
+   .collect()
+}
+
 struct ServerProcessMap;
 impl TypeMapKey for ServerProcessMap {
     type Value = Arc<RwLock<Vec<Option<Child>>>>;
@@ -120,16 +133,7 @@ impl EventHandler for Handler {
     async fn ready(&self, ctx: Context, ready: Ready) {
         println!("{} is connected!", ready.user.name);
 
-        let server_configs: Vec<ServerConfig> = CONFIG
-            .get_array("servers")
-            .expect("Could not find 'servers' array in config")
-            .iter()
-            .map(|val| {
-                val.clone()
-                    .try_deserialize::<ServerConfig>()
-                    .expect("Could not deserialize 'servers' array")
-            })
-            .collect();
+        let server_configs = parse_server_configs(&CONFIG);
 
         for server_config in &server_configs {
             let guild_id = GuildId(match server_config {
