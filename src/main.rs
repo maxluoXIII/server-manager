@@ -1,5 +1,6 @@
 mod commands;
 
+use std::collections::HashSet;
 use std::process::Child;
 use std::sync::Arc;
 
@@ -137,29 +138,33 @@ impl EventHandler for Handler {
 
         let server_configs = parse_server_configs(&CONFIG);
 
+        let mut registered_guilds = HashSet::new();
         for server_config in &server_configs {
             let guild_id = GuildId(match server_config {
                 ServerConfig::JavaConfig { guild_id, .. } => *guild_id,
                 ServerConfig::BedrockConfig { guild_id, .. } => *guild_id,
             });
 
-            let commands = GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
-                commands
-                    .create_application_command(|command| commands::ping::register(command))
-                    .create_application_command(|command| commands::list::register(command))
-                    .create_application_command(|command| {
-                        commands::start::register(command, &guild_id, &server_configs)
-                    })
-                    .create_application_command(|command| {
-                        commands::stop::register(command, &guild_id, &server_configs)
-                    })
-            })
-            .await;
+            if !registered_guilds.contains(&guild_id) {
+                let commands = GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
+                    commands
+                        .create_application_command(|command| commands::ping::register(command))
+                        .create_application_command(|command| commands::list::register(command))
+                        .create_application_command(|command| {
+                            commands::start::register(command, &guild_id, &server_configs)
+                        })
+                        .create_application_command(|command| {
+                            commands::stop::register(command, &guild_id, &server_configs)
+                        })
+                })
+                .await;
 
-            println!(
-                "Registered following commands for {:?}: {:?}",
-                guild_id, commands
-            );
+                println!(
+                    "Registered following commands for {:?}: {:?}",
+                    guild_id, commands
+                );
+                registered_guilds.insert(guild_id);
+            }
         }
     }
 }
