@@ -76,7 +76,7 @@ impl EventHandler for Handler {
 
             let content = match command.data.name.as_str() {
                 "ping" => commands::ping::run(&command.data.options),
-                "list" => commands::list::run(&command.data.options, &CONFIG),
+                "list" => commands::list::run(&command, &parse_server_configs(&CONFIG)),
                 "start" => {
                     let proc_map = {
                         let data_read = ctx.data.read().await;
@@ -89,6 +89,7 @@ impl EventHandler for Handler {
                     {
                         let mut server_process = proc_map.write().await;
                         commands::start::run(
+                            &command,
                             &command.data.options,
                             &mut *server_process,
                             public_ip::addr().await,
@@ -108,9 +109,10 @@ impl EventHandler for Handler {
                     {
                         let mut server_process = proc_map.write().await;
                         commands::stop::run(
+                            &command,
                             &command.data.options,
                             &mut *server_process,
-                            CONFIG.get("notify-id").unwrap(),
+                            &CONFIG,
                         )
                     }
                 }

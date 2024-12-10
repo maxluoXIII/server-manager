@@ -3,13 +3,14 @@ use std::process::{Child, Command, Stdio};
 
 use config::Config;
 use serenity::builder::CreateApplicationCommand;
+use serenity::model::application::interaction::application_command::ApplicationCommandInteraction;
 use serenity::model::id::GuildId;
 use serenity::model::prelude::command::CommandOptionType;
 use serenity::model::prelude::interaction::application_command::{
     CommandDataOption, CommandDataOptionValue,
 };
 
-use crate::ServerConfig;
+use crate::{parse_server_configs, ServerConfig};
 
 fn start_server(server_config: &ServerConfig) -> std::io::Result<Child> {
     match server_config {
@@ -40,11 +41,16 @@ fn start_server(server_config: &ServerConfig) -> std::io::Result<Child> {
 }
 
 pub fn run(
+    command: &ApplicationCommandInteraction,
     options: &[CommandDataOption],
     proc_map: &mut Vec<Option<Child>>,
     ip: Option<IpAddr>,
     config: &Config,
 ) -> String {
+    if command.guild_id.is_none() {
+        return "No guild id in command".to_string();
+    }
+
     let notify_id = config
         .get::<u64>("notify-id")
         .expect("Expected required notify id");
@@ -60,6 +66,17 @@ pub fn run(
         CommandDataOptionValue::Integer(index) => index as usize,
         _ => return "Did not receive a server index".to_string(),
     };
+
+    let server_configs = parse_server_configs(config);
+    let server_config = server_configs
+        .get(server_index)
+        .expect(&format!("Could not get config for index {server_index}"));
+    if match server_config {
+        ServerConfig::JavaConfig { guild_id, .. } => GuildId(*guild_id) != command.guild_id.unwrap(),
+        ServerConfig::BedrockConfig { guild_id, .. } => GuildId(*guild_id) != command.guild_id.unwrap(),
+    } {
+        return "Error: trying to control server from wrong guild".to_string();
+    }
 
     if server_index >= proc_map.len() {
         return "Server index out of bounds".to_string();
