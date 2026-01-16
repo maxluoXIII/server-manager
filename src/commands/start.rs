@@ -37,6 +37,21 @@ fn start_server(server_config: &ServerConfig) -> std::io::Result<Child> {
             .current_dir(dir)
             .stdin(Stdio::piped())
             .spawn(),
+
+        ServerConfig::HytaleConfig {
+            dir,
+            server_jar,
+            assets_zip,
+            java,
+            extra_opts,
+            ..
+        } => Command::new(java)
+            .args(extra_opts.split_whitespace())
+            .args(["-jar", server_jar])
+            .args(["--assets", assets_zip])
+            .current_dir(dir)
+            .stdin(Stdio::piped())
+            .spawn(),
     }
 }
 
@@ -72,8 +87,15 @@ pub fn run(
         .get(server_index)
         .expect(&format!("Could not get config for index {server_index}"));
     if match server_config {
-        ServerConfig::JavaConfig { guild_id, .. } => GuildId(*guild_id) != command.guild_id.unwrap(),
-        ServerConfig::BedrockConfig { guild_id, .. } => GuildId(*guild_id) != command.guild_id.unwrap(),
+        ServerConfig::JavaConfig { guild_id, .. } => {
+            GuildId(*guild_id) != command.guild_id.unwrap()
+        }
+        ServerConfig::BedrockConfig { guild_id, .. } => {
+            GuildId(*guild_id) != command.guild_id.unwrap()
+        }
+        ServerConfig::HytaleConfig { guild_id, .. } => {
+            GuildId(*guild_id) != command.guild_id.unwrap()
+        }
     } {
         return "Error: trying to control server from wrong guild".to_string();
     }
@@ -138,14 +160,16 @@ pub fn register<'a>(
                         == match server_config {
                             ServerConfig::JavaConfig { guild_id, .. } => GuildId(*guild_id),
                             ServerConfig::BedrockConfig { guild_id, .. } => GuildId(*guild_id),
+                            ServerConfig::HytaleConfig { guild_id, .. } => GuildId(*guild_id),
                         }
                 })
                 .for_each(|(index, server_config)| {
-                    let server_name = match server_config {
-                        ServerConfig::JavaConfig { name, .. } => name,
-                        ServerConfig::BedrockConfig { name, .. } => name,
+                    let (server_name, server_type) = match server_config {
+                        ServerConfig::JavaConfig { name, .. } => (name, "java"),
+                        ServerConfig::BedrockConfig { name, .. } => (name, "bedrock"),
+                        ServerConfig::HytaleConfig { name, .. } => (name, "hytale"),
                     };
-                    println!("Added server {server_name}");
+                    println!("Added {server_type} server {server_name}");
                     option.add_int_choice(server_name, index as i32);
                 });
 

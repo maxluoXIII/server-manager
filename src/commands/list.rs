@@ -18,12 +18,16 @@ pub fn run(command: &ApplicationCommandInteraction, server_configs: &Vec<ServerC
             ServerConfig::BedrockConfig { guild_id, .. } => {
                 GuildId(*guild_id) == command.guild_id.unwrap()
             }
+            ServerConfig::HytaleConfig { guild_id, .. } => {
+                GuildId(*guild_id) == command.guild_id.unwrap()
+            }
         })
         .enumerate()
         .map(|(index, server_config)| {
             let server_name = match server_config {
                 ServerConfig::JavaConfig { name, .. } => name,
                 ServerConfig::BedrockConfig { name, .. } => name,
+                ServerConfig::HytaleConfig { name, .. } => name,
             };
             format!("{index}. {server_name}\n")
         })

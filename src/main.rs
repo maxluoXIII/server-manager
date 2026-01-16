@@ -21,16 +21,16 @@ lazy_static! {
 }
 
 fn parse_server_configs(config: &Config) -> Vec<ServerConfig> {
-   config 
-       .get_array("servers")
-       .expect("Could not find 'servers' array in config")
-       .iter()
-       .map(|val| {
-           val.clone()
-               .try_deserialize::<ServerConfig>()
-               .expect("Could not deserialize 'servers' array")
-       })
-   .collect()
+    config
+        .get_array("servers")
+        .expect("Could not find 'servers' array in config")
+        .iter()
+        .map(|val| {
+            val.clone()
+                .try_deserialize::<ServerConfig>()
+                .expect("Could not deserialize 'servers' array")
+        })
+        .collect()
 }
 
 struct ServerProcessMap;
@@ -63,6 +63,18 @@ enum ServerConfig {
         name: String,
         dir: String,
         exe: String,
+        guild_id: u64,
+    },
+    #[serde(rename_all = "kebab-case")]
+    HytaleConfig {
+        name: String,
+        dir: String,
+        #[serde(default = "default_java")]
+        java: String,
+        server_jar: String,
+        assets_zip: String,
+        #[serde(default)]
+        extra_opts: String,
         guild_id: u64,
     },
 }
@@ -143,21 +155,23 @@ impl EventHandler for Handler {
             let guild_id = GuildId(match server_config {
                 ServerConfig::JavaConfig { guild_id, .. } => *guild_id,
                 ServerConfig::BedrockConfig { guild_id, .. } => *guild_id,
+                ServerConfig::HytaleConfig { guild_id, .. } => *guild_id,
             });
 
             if !registered_guilds.contains(&guild_id) {
-                let commands = GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
-                    commands
-                        .create_application_command(|command| commands::ping::register(command))
-                        .create_application_command(|command| commands::list::register(command))
-                        .create_application_command(|command| {
-                            commands::start::register(command, &guild_id, &server_configs)
-                        })
-                        .create_application_command(|command| {
-                            commands::stop::register(command, &guild_id, &server_configs)
-                        })
-                })
-                .await;
+                let commands =
+                    GuildId::set_application_commands(&guild_id, &ctx.http, |commands| {
+                        commands
+                            .create_application_command(|command| commands::ping::register(command))
+                            .create_application_command(|command| commands::list::register(command))
+                            .create_application_command(|command| {
+                                commands::start::register(command, &guild_id, &server_configs)
+                            })
+                            .create_application_command(|command| {
+                                commands::stop::register(command, &guild_id, &server_configs)
+                            })
+                    })
+                    .await;
 
                 println!(
                     "Registered following commands for {:?}: {:?}",

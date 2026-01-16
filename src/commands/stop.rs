@@ -49,6 +49,9 @@ pub fn run(
         ServerConfig::BedrockConfig { guild_id, .. } => {
             GuildId(*guild_id) != command.guild_id.unwrap()
         }
+        ServerConfig::HytaleConfig { guild_id, .. } => {
+            GuildId(*guild_id) != command.guild_id.unwrap()
+        }
     } {
         return "Error: trying to control server from wrong guild".to_string();
     }
@@ -60,7 +63,13 @@ pub fn run(
 
     if let Some(proc) = server_proc {
         let ret_string: String;
-        if let Ok(_) = proc.stdin.as_mut().unwrap().write_all("stop".as_bytes()) {
+        let stop_str = match server_config {
+            ServerConfig::JavaConfig { .. } => "stop",
+            ServerConfig::BedrockConfig { .. } => "stop",
+            ServerConfig::HytaleConfig { .. } => "/stop\n",
+        };
+        if let Ok(_) = proc.stdin.as_mut().unwrap().write_all(stop_str.as_bytes()) {
+            println!("Successfully wrote stop to process");
             if let Ok(_) = proc.wait() {
                 ret_string = format!("<@{notify_id}> Server has been stopped")
             } else {
@@ -101,12 +110,14 @@ pub fn register<'a>(
                         == match server_config {
                             ServerConfig::JavaConfig { guild_id, .. } => GuildId(*guild_id),
                             ServerConfig::BedrockConfig { guild_id, .. } => GuildId(*guild_id),
+                            ServerConfig::HytaleConfig { guild_id, .. } => GuildId(*guild_id),
                         }
                 })
                 .for_each(|(index, server_config)| {
                     let server_name = match server_config {
                         ServerConfig::JavaConfig { name, .. } => name,
                         ServerConfig::BedrockConfig { name, .. } => name,
+                        ServerConfig::HytaleConfig { name, .. } => name,
                     };
                     option.add_int_choice(server_name, index as i32);
                 });
